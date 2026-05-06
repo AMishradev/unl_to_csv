@@ -1,0 +1,8 @@
+{
+  "bucket":        "my-raw-data",
+  "unl_key":       "unloads/2025-07/inv.unl",
+  "columns_key":   "schema/inv_columns.txt",
+  "output_key":    "csv/2025-07/inv.csv",
+  "delimiter":     "|",         
+  "encoding":      "latin-1"
+}
