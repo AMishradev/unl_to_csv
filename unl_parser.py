@@ -16,7 +16,7 @@ column_names = [
 
 # open raw, then decode + newline-normalise with TextIOWrapper
 with open(args.givenFile, 'rb') as fh_raw, \
-     io.TextIOWrapper(fh_raw, encoding='utf-8', newline='') as unl_in, \
+     io.TextIOWrapper(fh_raw, encoding='latin-1', errors='surrogateescape', newline='') as unl_in, \
      open(args.outputFile, 'w', newline='', encoding='utf-8') as csv_out:
 
     # reader that understands Informix’s escape rules
