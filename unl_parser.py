@@ -1,50 +1,38 @@
 # unl_parser.py
 
-# this code is the intial code block from "https://github.com/mauryquijada/unl_parser/blob/master/unl_parser.py"
-# Author: Maury Quijada
-# Created on May 10, 2013
+import csv, io, sys, argparse, pathlib
 
-# This program takes in a .unl file as outputted from an Informix UNLOAD
-# database command and converts the data into a CSV file at a specified location.
-# This programs can run with a command line parameter "-d" that allows the
-# user to specify the delimiter used in the .unl file being passed.
+# -- args demo ---------------------------------------------------------------
+p = argparse.ArgumentParser()
+p.add_argument('--givenFile', required=True)
+p.add_argument('--outputFile', required=True)
+p.add_argument('--d', default='|', help='UNLOAD delimiter (default: |)')
+args = p.parse_args()
+# ---------------------------------------------------------------------------
 
-import argparse
-import csv
+column_names = [
+    # ... put your header list here ...
+]
 
-def main():
-	# Accept given arguments using argparse in Python's std. library.
-	parser = argparse.ArgumentParser(prog='unl_parser', \
-		description='Converts a .unl file as outputted from Informix and' \
-		' converts the data into a CSV file.')
-	parser.add_argument('-d', default='|', \
-		help="specify the delimiter used in the .unl file.")	
-	parser.add_argument('givenFile', help="specify the .unl file to process")
-	parser.add_argument('outputFile', help="specify the .csv file to output to")
-	args =  parser.parse_args()
+# open raw, then decode + newline-normalise with TextIOWrapper
+with open(args.givenFile, 'rb') as fh_raw, \
+     io.TextIOWrapper(fh_raw, encoding='utf-8', newline='') as unl_in, \
+     open(args.outputFile, 'w', newline='', encoding='utf-8') as csv_out:
 
-	# Open the supplied file and create the CSV writer.
-	givenFile = open(args.givenFile, 'r')
-	csvFile = csv.writer(open(args.outputFile, 'w'), delimiter=',', \
-		quoting=csv.QUOTE_ALL)
+    # reader that understands Informix’s escape rules
+    rdr = csv.reader(
+        unl_in,
+        delimiter=args.d,
+        escapechar='\\',
+        quoting=csv.QUOTE_NONE  # UNLOAD never double-quotes
+    )
 
-	# Eliminate new lines that are within the delimiter.
-	inputFile = givenFile.read()
+    # writer for standard CSV
+    wtr = csv.writer(csv_out, delimiter=',', quoting=csv.QUOTE_ALL)
+    wtr.writerow(column_names)          # header
 
-	# Take the given file and convert it line-by-line into a CSV.
-	for line in inputFile.split(args.d + "\r"):
-		# Add the delimiter to the end of the line (removed in above step).
-		line += args.d
-
-		# Create an array representing each column and eliminate whitespace.
-		splitLine = line.split(args.d)
-		splitLine = ["" if val.isspace() else val.strip() for val in splitLine]
-		
-		# Remove the carriage return.
-		splitLine.pop()
-
-		# Finally, add to the csvFile.
-		csvFile.writerow(splitLine)
-
-if __name__ == "__main__":
-	main()
+    for row in rdr:
+        # row is already a list of strings, properly un-escaped
+        # If you want to turn empty strings into None, do it here:
+        # row = [f if f != '' else None for f in row]
+        wtr.writerow(row)
